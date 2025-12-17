@@ -31,6 +31,10 @@
     <style>
         body { background-color: #F9F7F3; }
         #pwa-install-prompt { display: none; }
+        /* 自訂 Checkbox 樣式顏色 */
+        input[type="checkbox"] {
+            accent-color: #7D8B7E;
+        }
     </style>
 </head>
 <body>
@@ -87,7 +91,13 @@
             const [images, setImages] = useState([]);
             const [analyzing, setAnalyzing] = useState(false);
             const [results, setResults] = useState(null);
-            const [email, setEmail] = useState("oliver603@gmail.com");
+            
+            // Recipient State (收件人列表)
+            const [recipientList, setRecipientList] = useState([
+                { email: "oliver603@gmail.com", selected: true },
+                { email: "yofarn@gmail.com", selected: true }
+            ]);
+
             const [sendingEmail, setSendingEmail] = useState(false);
             const [emailStatus, setEmailStatus] = useState(null);
             
@@ -118,6 +128,12 @@
             const handleSaveSettings = () => {
                 localStorage.setItem('food_guard_api_key', userApiKey);
                 setShowSettings(false);
+            };
+
+            const toggleRecipient = (index) => {
+                const newList = [...recipientList];
+                newList[index].selected = !newList[index].selected;
+                setRecipientList(newList);
             };
 
             const resizeImage = (file) => {
@@ -279,9 +295,11 @@
             };
 
             const sendEmail = () => {
-                if (!results || !email) {
-                alert("請確認有分析結果且已輸入 Email");
-                return;
+                const selectedEmails = recipientList.filter(r => r.selected).map(r => r.email);
+
+                if (!results || selectedEmails.length === 0) {
+                    alert("請確認有分析結果且至少勾選一個收件人");
+                    return;
                 }
 
                 if (!window.emailjs) {
@@ -335,13 +353,16 @@
                 </div>
                 `;
 
+                // 將選中的 Email 用逗號連接
+                const recipients = selectedEmails.join(',');
+
                 const templateParams = {
-                email: email,
-                to_email: email,
-                recipient: email,
-                subject: `MM食安分析_${new Date().toLocaleDateString()}`,
-                message: emailHtml,
-                message_html: emailHtml
+                    email: recipients,      // 主要收件人
+                    to_email: recipients,   // EmailJS 常用欄位
+                    recipient: recipients,
+                    subject: `MM食安分析_${new Date().toLocaleDateString()}`,
+                    message: emailHtml,
+                    message_html: emailHtml
                 };
 
                 window.emailjs.send('service_5yh7x6g', 'template_dlbyml8', templateParams)
@@ -644,20 +665,27 @@
                         <p className="text-xs" style={{ color: '#A8B5A3' }}>將這份包含安東尼威廉觀點的詳細分析寄給自己保存。</p>
                         
                         <div className="flex flex-col gap-3">
-                            <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="輸入您的 Email"
-                            className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all bg-[#F9F7F3]"
-                            style={{ borderColor: '#A8B5A3', color: '#333' }}
-                            />
+                            <label className="block text-sm font-bold" style={{ color: '#7D8B7E' }}>選擇收件人：</label>
+                            <div className="space-y-2">
+                                {recipientList.map((r, index) => (
+                                    <label key={index} className="flex items-center gap-2 p-3 rounded-xl border bg-[#F9F7F3] cursor-pointer hover:bg-white transition-colors" style={{ borderColor: '#A8B5A3' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={r.selected}
+                                            onChange={() => toggleRecipient(index)}
+                                            className="w-5 h-5 rounded"
+                                            style={{ accentColor: '#7D8B7E' }}
+                                        />
+                                        <span className="text-sm font-mono text-[#333]">{r.email}</span>
+                                    </label>
+                                ))}
+                            </div>
                             
                             {/* Send Button - Primary Action Style */}
                             <button
                             onClick={sendEmail}
                             disabled={sendingEmail}
-                            className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 hover:translate-y-[1px] active:translate-y-[3px]"
+                            className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 hover:translate-y-[1px] active:translate-y-[3px] mt-2"
                             style={{ 
                                 backgroundColor: '#7D8B7E', // accent-green-dark
                                 boxShadow: sendingEmail ? 'none' : '0 4px 0 0 #DDA0A0', // accent-pink-dark shadow
