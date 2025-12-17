@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mm-food-guard-v1';
+const CACHE_NAME = 'mm-food-guard-v2'; // 更新版本號以確保快取更新
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,8 +7,8 @@ const ASSETS_TO_CACHE = [
   'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
   'https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/lucide-react/dist/umd/lucide-react.min.js',
   'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js'
+  // 已移除 Lucide Icons 連結，避免快取錯誤
 ];
 
 // 安裝 Service Worker 並快取資源
@@ -19,6 +19,7 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting(); // 強制讓新的 SW 立即接管
 });
 
 // 攔截網路請求：優先使用快取，失敗則連線網路 (Cache First, falling back to Network)
@@ -52,4 +53,5 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  self.clients.claim(); // 立即取得控制權
 });
