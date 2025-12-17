@@ -12,7 +12,10 @@
     <meta name="theme-color" content="#7D8B7E">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3023/3023246.png">
+    
+    <!-- 使用 icon.png -->
+    <link rel="apple-touch-icon" href="./icon.png">
+    <link rel="icon" type="image/png" href="./icon.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,7 +30,6 @@
 
     <style>
         body { background-color: #F9F7F3; }
-        /* PWA 安裝提示樣式優化 */
         #pwa-install-prompt { display: none; }
     </style>
 </head>
@@ -36,7 +38,6 @@
 
     <!-- PWA Service Worker Registration -->
     <script>
-        // 僅在 HTTPS 或 localhost 環境下註冊 Service Worker
         if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
@@ -55,7 +56,6 @@
         const { useState, useEffect } = React;
 
         // --- 內建圖示庫 (Inline Icons) ---
-        // 為了避免外部 Lucide Library 載入失敗，直接定義 SVG 元件
         const IconBase = ({ children, className = "w-6 h-6", ...props }) => (
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -194,27 +194,24 @@
 
                 try {
                 const parts = [];
-                // Prompt engineered specifically for detailed MM scoring
+                // Prompt engineered specifically for detailed MM scoring with decimals
                 const promptText = `
-                    你現在是醫療靈媒安東尼·威廉（Anthony William）。請根據你的飲食哲學，對圖片中的食物進行【風險評級分析】。
+                    你現在是醫療靈媒安東尼·威廉（Anthony William）。請根據你的飲食哲學，對圖片中的食物進行【精細風險評級分析】。
 
-                    **請使用以下 4 階評分標準 (0-10) 來評估 riskScore：**
+                    **請使用累積疊加邏輯，給出精確到小數點後一位的分數 (如 4.2, 5.5, 8.9)：**
 
-                    **1. 療癒區 (0-3 分):**
-                    * **標準**: 純天然、整全食物(Whole Food)、無油脂、含有療癒成份。
-                    * **例子**: 野生藍莓(0), 西洋芹汁(0), 蘋果(1), 無油蒸蔬菜(2)。
+                    **1. 基準分 (Base Score):**
+                    - **療癒區 (0.0 - 3.0)**: 純蔬果、無油生食。
+                    - **緩衝區 (4.0 - 6.0)**: 無麩質澱粉(白飯/馬鈴薯)、熟食、少量油脂。
+                    - **警戒區 (7.0 - 8.0)**: 含麩質/基改油/蛋奶的一般加工品。
+                    - **危險區 (9.0 - 10.0)**: 豬肉/養殖魚/高脂高糖/化學添加。
 
-                    **2. 緩衝區/中性 (4-6 分):**
-                    * **標準**: 不含明顯高危成份，但缺乏療癒力，或是含有少量油脂/填充劑的熟食。不餵養病毒，但會造成肝臟輕微負擔。
-                    * **例子**: 白飯(4), 蒸馬鈴薯(4), 燕麥粥(4), 簡單的雞胸肉沙拉(含少許油)(5), 咖哩飯(若無奶/麩質)(5-6)。
-
-                    **3. 警戒區 (7-8 分):**
-                    * **標準**: 含有「一級違禁品」(Level 1 Troublemakers)，會餵養病毒或造成發炎。一般加工食品通常落在此區。
-                    * **例子**: 奧利歐餅乾(含麩質/大豆油/糖)(7), 含有蛋或牛奶的麵包(7-8), 炸薯條(劣質油)(8)。
-
-                    **4. 危險區 (9-10 分):**
-                    * **標準**: 含有「進階違禁品」(Level 3-5 Troublemakers) 或 「高脂+高糖」炸彈組合。
-                    * **例子**: 豬肉料理(9), 養殖魚(9), 充滿味精/化學添加物的零食(9), 起司漢堡(高脂肉+奶+麩質)(10), 鮪魚(重金屬)(10)。
+                    **2. 分數微調 (Fine-tuning):**
+                    - **增加風險 (+)**: 每發現一種違禁品，請往上加分。
+                      - 例如: 白飯(4.0) + 滷蛋(+2.0) + 醬油含麩質(+1.0) = 7.0
+                      - 例如: 餅乾(7.0) + 人工色素(+1.5) = 8.5
+                    - **降低風險 (-)**: 若包含顯著的療癒食材(Holy Four)，請往下減分(即降低風險)。
+                      - 例如: 沙拉(3.0) + 大量香菜(-0.5) = 2.5
 
                     **回傳任務 (JSON Only)：**
                     回傳 JSON 陣列，欄位如下：
@@ -225,7 +222,7 @@
                     - badEffect (字串，解釋危害)
                     - goodIngredients (字串)
                     - goodEffect (字串)
-                    - riskScore (數字 0-10，**請嚴格參考上述分級標準，不要所有加工食品都給 9 分**)
+                    - riskScore (數字，**支援小數點**，例如 5.5)
                     - mmComment (字串，簡短評語)
 
                     請回傳純 JSON 陣列，不要有 Markdown。
